@@ -14,14 +14,15 @@ public class SplashScreen extends JWindow {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
-                // Muted jungle green → cream gradient
-                Color start = new Color(95, 167, 120);  // muted jungle green
-                Color end = new Color(245, 241, 222);   // soft cream
+
+                // 🌲 Dark forest → olive green gradient
+                Color start = new Color(24, 38, 24);   // deep forest green
+                Color end = new Color(70, 85, 55);     // muted olive
                 GradientPaint gp = new GradientPaint(0, 0, start, getWidth(), getHeight(), end);
                 g2d.setPaint(gp);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
 
-                // Draw title manually with alpha (smooth fade)
+                // Draw title manually with fade alpha
                 if (title != null) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, titleAlpha));
@@ -38,10 +39,10 @@ public class SplashScreen extends JWindow {
         };
         content.setLayout(new BorderLayout());
 
-        // === Create title label (for font loading only) ===
+        // === Title label (for font loading only) ===
         title = new JLabel("INGREEDY", JLabel.CENTER);
 
-        // Try to load Lobster font
+        // Try to load custom Lobster font
         Font lobster;
         try {
             lobster = Font.createFont(Font.TRUETYPE_FONT,
@@ -50,32 +51,13 @@ public class SplashScreen extends JWindow {
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             ge.registerFont(lobster);
         } catch (Exception e) {
-            lobster = new Font("Segoe Script", Font.BOLD, 64);
+            lobster = new Font("Serif", Font.BOLD, 64);
         }
 
+        // 🪶 Light accent for contrast against dark background
         title.setFont(lobster);
-        title.setForeground(new Color(33, 47, 41)); // deep muted green
+        title.setForeground(new Color(245, 240, 225));  // off-white / beige tone
 
-        // === Bottom Images ===
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.setOpaque(false);
-
-        // Load and scale images from resources
-        ImageIcon leftSnackIcon = new ImageIcon(getClass().getResource("/images/snack_left.png"));
-        ImageIcon rightSnackIcon = new ImageIcon(getClass().getResource("/images/snack_right.png"));
-
-        // Scale to 80×80 px for both images
-        Image leftScaled = leftSnackIcon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
-        Image rightScaled = rightSnackIcon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
-
-        JLabel leftSnack = new JLabel(new ImageIcon(leftScaled));
-        JLabel rightSnack = new JLabel(new ImageIcon(rightScaled));
-
-        bottomPanel.add(leftSnack, BorderLayout.WEST);
-        bottomPanel.add(rightSnack, BorderLayout.EAST);
-        bottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
-
-        content.add(bottomPanel, BorderLayout.SOUTH);
 
         // === Window setup ===
         setContentPane(content);
@@ -120,7 +102,7 @@ public class SplashScreen extends JWindow {
                 ((Timer) e.getSource()).stop();
                 setVisible(false);
                 dispose();
-                // ✅ Launch only once after fade-out completes
+                // ✅ Launch next screen after fade-out
                 SwingUtilities.invokeLater(HostelRecipesGUI::new);
             }
             setOpacity(opacity);
