@@ -1,227 +1,311 @@
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
-
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.border.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
 
 public class HostelRecipesGUI {
     private RecipeDatabase db;
     private RecipeMatcher matcher;
-    private JTextArea outputArea;
-    private JTextField ingredientField;
     private Set<String> userIngredients;
+    private Set<String> favoriteRecipes = new HashSet<>();
+    private int ecoPoints = 0;
+
     private DefaultListModel<String> ingredientListModel;
-    private JList<String> ingredientList;
-    private DefaultListModel<String> recipeListModel;
-    private JList<String> recipeList;
-    private void populateRecipeList() {
-        recipeListModel.clear();
-        for (String recipeName : db.getRecipes().keySet()) {
-            if (!recipeName.toLowerCase().startsWith("quick combo")) {
-                recipeListModel.addElement(recipeName);
-            }
-        }
-    }
+    private JTextField ingredientField;
+    private JTextArea outputArea;
+    private JTextArea detailArea;
+
+    private JPanel mainPanel;
+    private CardLayout cardLayout;
+
+    private String selectedRecipe = null;
+
+    // === Color Palette ===
+    private final Color BEIGE = new Color(245, 242, 229);
+    private final Color MINT = new Color(155, 213, 178);
+    private final Color DARK_MINT = new Color(116, 189, 156);
+    private final Color TEXT_COLOR = new Color(50, 50, 50);
+
+    private final Font SERIF_FONT = new Font("Serif", Font.PLAIN, 16);
 
     public HostelRecipesGUI() {
-        UIManager.put("Button.font", new Font("Segoe UI Emoji", Font.BOLD, 14));
-        UIManager.put("Label.font", new Font("Segoe UI Emoji", Font.PLAIN, 14));
         db = new RecipeDatabase();
         matcher = new RecipeMatcher(db.getRecipes());
         userIngredients = new HashSet<>();
-        recipeListModel = new DefaultListModel<>();
-        recipeList = new JList<>(recipeListModel);
-        populateRecipeList();
 
-        // === Frame ===
         JFrame frame = new JFrame("INGREEDY");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(900, 600);
-        frame.setLayout(new BorderLayout(10, 10));
-        frame.setLocationRelativeTo(null); // Center window
+        frame.setSize(950, 600);
+        frame.setLocationRelativeTo(null);
 
-        // === Title Banner ===
-        JLabel title = new JLabel("INGREEDY", JLabel.CENTER);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        title.setForeground(new Color(236, 240, 241));
-        title.setBorder(new EmptyBorder(15, 0, 15, 0));
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
+        mainPanel.setBackground(BEIGE);
 
-        JPanel titlePanel = new JPanel();
-        titlePanel.setBackground(new Color(52, 73, 94)); // Dark banner
-        titlePanel.add(title);
-        frame.add(titlePanel, BorderLayout.NORTH);
+        // Add all screens
+        mainPanel.add(createIngredientScreen(frame), "Ingredients");
+        mainPanel.add(createRecipeScreen(frame), "Recipes");
+        mainPanel.add(createRecipeDetailScreen(frame), "RecipeDetail");
 
-        // === Left Panel (Ingredients List) ===
-        JPanel leftPanel = new JPanel(new BorderLayout(5, 5)) {
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                GradientPaint gp = new GradientPaint(0, 0,
-                        new Color(46, 204, 113), getWidth(), getHeight(),
-                        new Color(39, 174, 96));
-                g2d.setPaint(gp);
-                g2d.fillRect(0, 0, getWidth(), getHeight());
-            }
-        };
-        leftPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        frame.add(mainPanel);
+        frame.setVisible(true);
+    }
 
-        JLabel ingLabel = new JLabel("Your Ingredients:");
-        ingLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        ingLabel.setForeground(Color.WHITE);
+    // ======================== INGREDIENT SCREEN ========================
+    private JPanel createIngredientScreen(JFrame frame) {
+        JPanel panel = new JPanel(new BorderLayout(20, 20));
+        panel.setBackground(BEIGE);
+        panel.setBorder(new EmptyBorder(30, 60, 30, 60));
+
+        JLabel title = new JLabel("What ingredients do you have?", JLabel.CENTER);
+        title.setFont(new Font("Serif", Font.BOLD, 26));
+        title.setForeground(TEXT_COLOR);
+        panel.add(title, BorderLayout.NORTH);
+
+        JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
+        centerPanel.setOpaque(false);
 
         ingredientListModel = new DefaultListModel<>();
-        ingredientList = new JList<>(ingredientListModel);
-        ingredientList.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        ingredientList.setBackground(new Color(236, 240, 241));
-        ingredientList.setBorder(BorderFactory.createLineBorder(new Color(34, 49, 63)));
+        JList<String> ingredientList = new JList<>(ingredientListModel);
+        ingredientList.setFont(SERIF_FONT);
+        ingredientList.setBackground(Color.WHITE);
+        ingredientList.setBorder(new LineBorder(MINT, 2, true));
+        ingredientList.setSelectionBackground(DARK_MINT);
 
-        JScrollPane ingScroll = new JScrollPane(ingredientList);
+        JScrollPane scrollPane = new JScrollPane(ingredientList);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
 
-        leftPanel.add(ingLabel, BorderLayout.NORTH);
-        leftPanel.add(ingScroll, BorderLayout.CENTER);
-
-        // === Input Panel (Bottom of Left Panel) ===
-        JPanel inputPanel = new JPanel(new FlowLayout());
+        JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         inputPanel.setOpaque(false);
 
-        ingredientField = new JTextField(15);
-        ingredientField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        ingredientField = new JTextField(18);
+        ingredientField.setFont(SERIF_FONT);
+        ingredientField.setBorder(new LineBorder(DARK_MINT, 2, true));
+        ingredientField.setBackground(Color.WHITE);
+        ingredientField.setForeground(TEXT_COLOR);
 
-        JButton addBtn = new JButton("Add");
-        JButton resetBtn = new JButton("Reset");
-        styleButton(addBtn, new Color(52, 152, 219));
-        styleButton(resetBtn, new Color(231, 76, 60));
+        JButton addBtn = createButton("Add", MINT, DARK_MINT);
+        JButton resetBtn = createButton("Reset", new Color(231, 76, 60), DARK_MINT);
+        JButton findBtn = createButton("Find Recipes ➜", MINT, DARK_MINT);
+        JButton homeBtn = createButton("🏠 Back to Home", MINT, DARK_MINT);
+
+        addBtn.addActionListener(e -> addIngredient());
+        resetBtn.addActionListener(e -> resetIngredients());
+        findBtn.addActionListener(e -> showRecipeScreen());
+        homeBtn.addActionListener(e -> goHome(frame));
 
         inputPanel.add(ingredientField);
         inputPanel.add(addBtn);
         inputPanel.add(resetBtn);
-        leftPanel.add(inputPanel, BorderLayout.SOUTH);
 
-        // === Right Panel (Output Recipes) ===
-        JPanel rightPanel = new JPanel(new BorderLayout(5, 5));
-        rightPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        rightPanel.setBackground(new Color(236, 240, 241));
+        centerPanel.add(inputPanel, BorderLayout.SOUTH);
+        panel.add(centerPanel, BorderLayout.CENTER);
 
-        JLabel outLabel = new JLabel("Recipe Suggestions:");
-        outLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        outLabel.setForeground(new Color(44, 62, 80));
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        bottomPanel.setOpaque(false);
+        bottomPanel.add(findBtn);
+        bottomPanel.add(homeBtn);
+        panel.add(bottomPanel, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    // ======================== RECIPE LIST SCREEN ========================
+    private JPanel createRecipeScreen(JFrame frame) {
+        JPanel panel = new JPanel(new BorderLayout(20, 20));
+        panel.setBackground(BEIGE);
+        panel.setBorder(new EmptyBorder(30, 60, 30, 60));
+
+        JLabel title = new JLabel("🍳 Recipe Suggestions", JLabel.CENTER);
+        title.setFont(new Font("Serif", Font.BOLD, 26));
+        title.setForeground(TEXT_COLOR);
+        panel.add(title, BorderLayout.NORTH);
 
         outputArea = new JTextArea();
-        outputArea.setFont(new Font("Consolas", Font.PLAIN, 14));
         outputArea.setEditable(false);
+        outputArea.setFont(SERIF_FONT);
+        outputArea.setBackground(Color.WHITE);
+        outputArea.setForeground(TEXT_COLOR);
         outputArea.setLineWrap(true);
         outputArea.setWrapStyleWord(true);
-        outputArea.setBackground(new Color(250, 250, 250));
-        outputArea.setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199)));
+        outputArea.setBorder(new LineBorder(MINT, 2, true));
 
         JScrollPane scrollPane = new JScrollPane(outputArea);
+        panel.add(scrollPane, BorderLayout.CENTER);
 
-        JButton findBtn = new JButton("Find Recipes");
-        styleButton(findBtn, new Color(155, 89, 182));
+        JButton backBtn = createButton("⬅ Back", MINT, DARK_MINT);
+        JButton homeBtn = createButton("🏠 Back to Home", MINT, DARK_MINT);
 
-        rightPanel.add(outLabel, BorderLayout.NORTH);
-        rightPanel.add(scrollPane, BorderLayout.CENTER);
-        rightPanel.add(findBtn, BorderLayout.SOUTH);
+        backBtn.addActionListener(e -> cardLayout.show(mainPanel, "Ingredients"));
+        homeBtn.addActionListener(e -> goHome(frame));
 
-        // === Add to frame ===
-        frame.add(leftPanel, BorderLayout.WEST);
-        frame.add(rightPanel, BorderLayout.CENTER);
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        btnPanel.setOpaque(false);
+        btnPanel.add(backBtn);
+        btnPanel.add(homeBtn);
 
-        // === Button Actions ===
-        addBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { addIngredient(); }
-        });
-        findBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { findRecipes(); }
-        });
-        resetBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { resetAll(); }
-        });
-
-        frame.setVisible(true);
+        panel.add(btnPanel, BorderLayout.SOUTH);
+        return panel;
     }
 
-    private void styleButton(JButton btn, Color baseColor) {
-        btn.setFocusPainted(false);
-        btn.setBackground(baseColor);
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    // ======================== RECIPE DETAIL SCREEN ========================
+    private JPanel createRecipeDetailScreen(JFrame frame) {
+        JPanel panel = new JPanel(new BorderLayout(20, 20));
+        panel.setBackground(BEIGE);
+        panel.setBorder(new EmptyBorder(30, 60, 30, 60));
 
-        btn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btn.setBackground(baseColor.darker());
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                btn.setBackground(baseColor);
-            }
-        });
+        JLabel title = new JLabel("📖 Recipe Details", JLabel.CENTER);
+        title.setFont(new Font("Serif", Font.BOLD, 26));
+        title.setForeground(TEXT_COLOR);
+        panel.add(title, BorderLayout.NORTH);
+
+        detailArea = new JTextArea();
+        detailArea.setEditable(false);
+        detailArea.setFont(SERIF_FONT);
+        detailArea.setBackground(Color.WHITE);
+        detailArea.setForeground(TEXT_COLOR);
+        detailArea.setLineWrap(true);
+        detailArea.setWrapStyleWord(true);
+        detailArea.setBorder(new LineBorder(MINT, 2, true));
+
+        JScrollPane scrollPane = new JScrollPane(detailArea);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        btnPanel.setOpaque(false);
+
+        JButton backBtn = createButton("⬅ Back to Recipes", MINT, DARK_MINT);
+        JButton favBtn = createButton("❤️ Like Recipe", MINT, DARK_MINT);
+        JButton cookedBtn = createButton("✅ Mark as Cooked", MINT, DARK_MINT);
+        JButton expiryBtn = createButton("🕒 Log Expiry", MINT, DARK_MINT);
+        JButton homeBtn = createButton("🏠 Back to Home", MINT, DARK_MINT);
+
+        backBtn.addActionListener(e -> cardLayout.show(mainPanel, "Recipes"));
+        favBtn.addActionListener(e -> addToFavorites());
+        cookedBtn.addActionListener(e -> addEcoPoints());
+        expiryBtn.addActionListener(e -> logExpiry());
+        homeBtn.addActionListener(e -> goHome(frame));
+
+        btnPanel.add(backBtn);
+        btnPanel.add(favBtn);
+        btnPanel.add(cookedBtn);
+        btnPanel.add(expiryBtn);
+        btnPanel.add(homeBtn);
+
+        panel.add(btnPanel, BorderLayout.SOUTH);
+        return panel;
     }
 
-    private void addIngredient() {
-        String ing = ingredientField.getText().toLowerCase().trim();
-        if (!ing.isEmpty() && !userIngredients.contains(ing)) {
-            userIngredients.add(ing);
-            ingredientListModel.addElement("✅ " + ing);
-            ingredientField.setText("");
-        }
-    }
-
-    private void findRecipes() {
+    // ======================== LOGIC METHODS ========================
+    private void showRecipeScreen() {
         outputArea.setText("");
         outputArea.append("🍳 Your Ingredients: " + userIngredients + "\n\n");
 
-        List<String> possible = matcher.findPossibleRecipes(userIngredients);
-        List<String> close = matcher.findCloseRecipes(userIngredients);
-
+        java.util.List<String> possible = matcher.findPossibleRecipes(userIngredients);
         possible.removeIf(name -> name.toLowerCase().startsWith("quick combo"));
-        close.removeIf(name -> name.toLowerCase().startsWith("quick combo"));
 
         if (!possible.isEmpty()) {
             outputArea.append("✅ Recipes you can make (" + possible.size() + "):\n");
             for (String name : possible) {
-                Recipe r = db.getRecipes().get(name);
-                outputArea.append("\n🍽 " + name +
-                        "\n  Essentials: " + r.getEssential() +
-                        "\n  Optional: " + r.getOptional() +
-                        "\n  Instructions:\n" + r.getInstructions() + "\n");
+                outputArea.append("\nPossible Dish: " + name + "\n");
             }
         } else {
             outputArea.append("❌ No exact recipe matches.\n");
         }
 
-        if (!close.isEmpty()) {
-            outputArea.append("\n⚡ Close matches (" + close.size() + "):\n");
-            for (String name : close) {
-                outputArea.append("➡ " + name + "\n");
+        outputArea.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                int offset = outputArea.viewToModel2D(e.getPoint());
+                try {
+                    int line = outputArea.getLineOfOffset(offset);
+                    String text = outputArea.getText(outputArea.getLineStartOffset(line),
+                            outputArea.getLineEndOffset(line) - outputArea.getLineStartOffset(line)).trim();
+                    if (text.startsWith("Possible Dish:")) {
+                        selectedRecipe = text.replace("Possible Dish:", "").trim();
+                        showRecipeDetail(selectedRecipe);
+                    }
+                } catch (Exception ignored) {}
             }
+        });
+
+        cardLayout.show(mainPanel, "Recipes");
+    }
+
+    private void showRecipeDetail(String name) {
+        Recipe r = db.getRecipes().get(name);
+        detailArea.setText("");
+        detailArea.append("🍽 " + name + "\n\n");
+        detailArea.append("Essentials: " + r.getEssential() + "\n");
+        detailArea.append("Optional: " + r.getOptional() + "\n\n");
+        detailArea.append("Instructions:\n" + r.getInstructions() + "\n");
+
+        cardLayout.show(mainPanel, "RecipeDetail");
+    }
+
+    private void addIngredient() {
+        String ing = ingredientField.getText().trim().toLowerCase();
+        if (!ing.isEmpty() && !userIngredients.contains(ing)) {
+            userIngredients.add(ing);
+            ingredientListModel.addElement("• " + ing);
+            ingredientField.setText("");
         }
     }
 
-    private void resetAll() {
+    private void resetIngredients() {
         userIngredients.clear();
         ingredientListModel.clear();
-        outputArea.setText("🔄 Reset successful. Start adding ingredients again.\n");
         ingredientField.setText("");
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            SplashScreen splash = new SplashScreen();
-            splash.showSplash(30, 1500, 30);
+    private void addToFavorites() {
+        if (selectedRecipe != null) {
+            favoriteRecipes.add(selectedRecipe);
+            JOptionPane.showMessageDialog(null, "❤️ Added " + selectedRecipe + " to Favorites!");
+        }
+    }
+
+    private void addEcoPoints() {
+        ecoPoints += 10;
+        JOptionPane.showMessageDialog(null, "✅ You earned +10 Eco Points! (Total: " + ecoPoints + ")");
+    }
+
+    private void logExpiry() {
+        String expiry = JOptionPane.showInputDialog("Enter expiry date for " + selectedRecipe + ":");
+        if (expiry != null && !expiry.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "🕒 Logged expiry for " + selectedRecipe + ": " + expiry);
+        }
+    }
+
+    // ======================== HELPER: Redirect to Home ========================
+    private void goHome(JFrame frame) {
+        frame.dispose(); // Close current window
+        new HomePage();  // Launch your existing HomePage.java
+    }
+
+    // ======================== UI HELPERS ========================
+    private JButton createButton(String text, Color baseColor, Color hoverColor) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setBackground(baseColor);
+        button.setForeground(TEXT_COLOR);
+        button.setFont(new Font("Serif", Font.BOLD, 16));
+        button.setBorder(new LineBorder(DARK_MINT, 2, true));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(hoverColor);
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(baseColor);
+            }
         });
+        return button;
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(HostelRecipesGUI::new);
     }
 }

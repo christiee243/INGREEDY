@@ -1,120 +1,126 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.geom.AffineTransform;
+import java.net.URL;
 
 public class EcoPointsPage extends JFrame {
 
-    private int ecoPoints = 120; // Example: points earned by the user (can be loaded from a file or DB)
-    private JLabel coinLabel;
-    private Timer spinTimer;
-    private int angle = 0;
-
     public EcoPointsPage() {
         setTitle("INGREEDY - Eco Points");
+        setSize(700, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 600);
         setLocationRelativeTo(null);
 
-        Color mintGreen = new Color(46, 110, 76);
-
-        // === Background Gradient ===
+        // === Background with soft gradient ===
         JPanel background = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
-                Color start = new Color(240, 245, 230);
-                Color end = new Color(225, 235, 215);
-                GradientPaint gp = new GradientPaint(0, 0, start, getWidth(), getHeight(), end);
+                GradientPaint gp = new GradientPaint(
+                        0, 0, new Color(245, 255, 245),
+                        0, getHeight(), new Color(230, 250, 230)
+                );
                 g2d.setPaint(gp);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
             }
         };
 
         // === Title ===
-        JLabel title = new JLabel("🌱 Your Eco Points 🌱", JLabel.CENTER);
-        title.setFont(new Font("Serif", Font.BOLD, 36));
-        title.setForeground(mintGreen);
-        title.setBorder(BorderFactory.createEmptyBorder(30, 10, 10, 10));
+        JLabel title = new JLabel("🌿 Your Eco Points 🌿", SwingConstants.CENTER);
+        title.setFont(new Font("Serif", Font.BOLD, 32));
+        title.setForeground(new Color(46, 110, 76));
+        title.setBorder(BorderFactory.createEmptyBorder(20, 10, 10, 10));
+        background.add(title, BorderLayout.NORTH);
 
-        // === Coin Animation ===
-        coinLabel = new JLabel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        // === Center panel with the rotating coin ===
+        CoinPanel coinPanel = new CoinPanel("/images/eco_coin.png");
+        background.add(coinPanel, BorderLayout.CENTER);
 
-                int size = Math.min(getWidth(), getHeight()) - 10;
-                int x = (getWidth() - size) / 2;
-                int y = (getHeight() - size) / 2;
+        // === Points + Back Button ===
+        JLabel pointsLabel = new JLabel("120 Eco Coins Earned!", SwingConstants.CENTER);
+        pointsLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
+        pointsLabel.setForeground(new Color(46, 110, 76));
+        pointsLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-                // Create 3D spinning illusion by changing width with sine wave
-                double scaleX = Math.abs(Math.sin(Math.toRadians(angle))) * 0.8 + 0.2;
-
-                // Coin base
-                g2d.setColor(new Color(255, 215, 0));
-                g2d.fillOval(x, y, size, size);
-
-                // Shading ellipse (rotating look)
-                g2d.setColor(new Color(255, 200, 0, 180));
-                g2d.fillOval((int) (x + size * (1 - scaleX) / 2), y, (int) (size * scaleX), size);
-
-                // Coin border
-                g2d.setColor(new Color(200, 150, 0));
-                g2d.setStroke(new BasicStroke(4));
-                g2d.drawOval(x, y, size, size);
-            }
-        };
-        coinLabel.setPreferredSize(new Dimension(200, 200));
-
-        // === Animate spinning coin ===
-        spinTimer = new Timer(40, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                angle = (angle + 10) % 360;
-                coinLabel.repaint();
-            }
-        });
-        spinTimer.start();
-
-        // === Eco Points Label ===
-        JLabel pointsLabel = new JLabel(ecoPoints + " Eco Coins Earned!", JLabel.CENTER);
-        pointsLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
-        pointsLabel.setForeground(mintGreen);
-        pointsLabel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
-
-        // === Back Button ===
-        JButton backButton = new JButton("⬅ Back to Home");
-        backButton.setFont(new Font("SansSerif", Font.BOLD, 18));
-        backButton.setBackground(Color.WHITE);
-        backButton.setForeground(mintGreen);
-        backButton.setBorder(BorderFactory.createLineBorder(mintGreen, 2, true));
+        JButton backButton = new JButton("← Back to Home");
+        backButton.setFont(new Font("SansSerif", Font.BOLD, 16));
+        backButton.setForeground(new Color(46, 110, 76));
         backButton.setFocusPainted(false);
+        backButton.setBorderPainted(false);
+        backButton.setContentAreaFilled(false);
         backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         backButton.addActionListener(e -> {
             dispose();
             new HomePage();
         });
 
-        // === Center Panel ===
-        JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setOpaque(false);
-        centerPanel.add(coinLabel, BorderLayout.CENTER);
-        centerPanel.add(pointsLabel, BorderLayout.SOUTH);
-
-        background.add(title, BorderLayout.NORTH);
-        background.add(centerPanel, BorderLayout.CENTER);
-        background.add(backButton, BorderLayout.SOUTH);
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setOpaque(false);
+        bottomPanel.add(pointsLabel, BorderLayout.CENTER);
+        bottomPanel.add(backButton, BorderLayout.SOUTH);
+        background.add(bottomPanel, BorderLayout.SOUTH);
 
         add(background);
         setVisible(true);
     }
 
+    // === Inner Class: Rotating Coin Panel ===
+    class CoinPanel extends JPanel {
+        private Image coinImage;
+        private double angle = 0;  // rotation angle in radians
+        private Timer timer;
+
+        public CoinPanel(String imagePath) {
+            setOpaque(false);
+
+            // ✅ Load coin image safely
+            URL imageUrl = getClass().getResource(imagePath);
+            if (imageUrl != null) {
+                coinImage = new ImageIcon(imageUrl).getImage();
+            } else {
+                coinImage = new ImageIcon("src/images/eco_coin.png").getImage();
+            }
+
+            // === Timer for rotation animation (steady pace) ===
+            // 40ms per frame → 25 FPS, increase angle slightly each frame
+            timer = new Timer(40, (ActionEvent e) -> {
+                angle += Math.toRadians(2); // rotate slowly
+                if (angle >= Math.PI * 2) angle = 0;
+                repaint();
+            });
+            timer.start();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (coinImage == null) {
+                g.drawString("⚠️ Coin image not found!", getWidth() / 2 - 70, getHeight() / 2);
+                return;
+            }
+
+            Graphics2D g2d = (Graphics2D) g.create();
+            int size = 200;
+            int x = (getWidth() - size) / 2;
+            int y = (getHeight() - size) / 2;
+
+            // === Smooth rotation ===
+            AffineTransform transform = new AffineTransform();
+            transform.translate(x + size / 2.0, y + size / 2.0); // move to center
+            transform.rotate(angle);
+            transform.translate(-size / 2.0, -size / 2.0); // move back
+
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.drawImage(coinImage, transform, this);
+
+            g2d.dispose();
+        }
+    }
+
+    // === Main for testing ===
     public static void main(String[] args) {
         SwingUtilities.invokeLater(EcoPointsPage::new);
     }
 }
-

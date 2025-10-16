@@ -5,19 +5,20 @@ public class SplashScreen extends JWindow {
 
     private float opacity = 0f;         // overall window opacity
     private float titleAlpha = 0f;      // title text fade alpha
-    private JLabel title;
+    private float taglineAlpha = 0f;    // tagline fade alpha
+    private JLabel title, tagline;
 
     public SplashScreen() {
-        // === Background panel with gradient ===
+        // === Background panel with beige gradient ===
         JPanel content = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
 
-                // 🌲 Dark forest → olive green gradient
-                Color start = new Color(24, 38, 24);   // deep forest green
-                Color end = new Color(70, 85, 55);     // muted olive
+                // 🌾 Warm beige gradient background (INGREEDY theme)
+                Color start = new Color(243, 238, 223);
+                Color end = new Color(230, 225, 210);
                 GradientPaint gp = new GradientPaint(0, 0, start, getWidth(), getHeight(), end);
                 g2d.setPaint(gp);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
@@ -35,14 +36,28 @@ public class SplashScreen extends JWindow {
                     g2.drawString(text, x, y);
                     g2.dispose();
                 }
+
+                // Draw tagline with independent fade alpha
+                if (tagline != null) {
+                    Graphics2D g3 = (Graphics2D) g.create();
+                    g3.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, taglineAlpha));
+                    g3.setFont(tagline.getFont());
+                    FontMetrics fm2 = g3.getFontMetrics();
+                    String text2 = tagline.getText();
+                    int x2 = (getWidth() - fm2.stringWidth(text2)) / 2;
+                    int y2 = getHeight() / 2 + fm2.getAscent() / 2 + 20;
+                    g3.setColor(tagline.getForeground());
+                    g3.drawString(text2, x2, y2);
+                    g3.dispose();
+                }
             }
         };
         content.setLayout(new BorderLayout());
 
-        // === Title label (for font loading only) ===
+        // === Title ===
         title = new JLabel("INGREEDY", JLabel.CENTER);
 
-        // Try to load custom Lobster font
+        // Try to load Lobster font
         Font lobster;
         try {
             lobster = Font.createFont(Font.TRUETYPE_FONT,
@@ -54,10 +69,15 @@ public class SplashScreen extends JWindow {
             lobster = new Font("Serif", Font.BOLD, 64);
         }
 
-        // 🪶 Light accent for contrast against dark background
-        title.setFont(lobster);
-        title.setForeground(new Color(245, 240, 225));  // off-white / beige tone
+        // === Tagline ===
+        tagline = new JLabel("Smarter. Greener. Tastier.", JLabel.CENTER);
+        tagline.setFont(new Font("SansSerif", Font.ITALIC, 22));
 
+        // === Colors ===
+        Color darkMintGreen = new Color(36, 95, 70); // darker, elegant mint green
+        title.setFont(lobster);
+        title.setForeground(darkMintGreen);
+        tagline.setForeground(new Color(60, 100, 75)); // softer tone of mint
 
         // === Window setup ===
         setContentPane(content);
@@ -69,16 +89,18 @@ public class SplashScreen extends JWindow {
     public void showSplash(int fadeInTime, int visibleTime, int fadeOutTime) {
         setVisible(true);
 
-        // === Fade-in animation ===
         Timer fadeIn = new Timer(30, e -> {
             opacity += 0.05f;
-            titleAlpha += 0.03f;
+            titleAlpha += 0.04f;
+            taglineAlpha += 0.03f;
+
             if (titleAlpha > 1f) titleAlpha = 1f;
+            if (taglineAlpha > 1f) taglineAlpha = 1f;
+
             if (opacity >= 1f) {
                 opacity = 1f;
                 ((Timer) e.getSource()).stop();
 
-                // Hold splash for visibleTime ms, then fade out
                 Timer holdTimer = new Timer(visibleTime, evt -> {
                     ((Timer) evt.getSource()).stop();
                     fadeOut(fadeOutTime);
@@ -96,14 +118,15 @@ public class SplashScreen extends JWindow {
         Timer fadeOut = new Timer(30, e -> {
             opacity -= 0.05f;
             titleAlpha -= 0.05f;
-            if (titleAlpha < 0f) titleAlpha = 0f;
+            taglineAlpha -= 0.05f;
+
             if (opacity <= 0f) {
                 opacity = 0f;
                 ((Timer) e.getSource()).stop();
                 setVisible(false);
                 dispose();
-                // ✅ Launch next screen after fade-out
-                SwingUtilities.invokeLater(HostelRecipesGUI::new);
+                // ✅ Direct to LoginPage.java after fade-out
+                SwingUtilities.invokeLater(LoginPage::new);
             }
             setOpacity(opacity);
             repaint();

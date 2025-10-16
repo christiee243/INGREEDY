@@ -40,7 +40,7 @@ public class HomePage extends JFrame {
         // === Category Buttons ===
         gridPanel.add(createCategoryButton("🍳  Make Your Dish", mintGreen));
         gridPanel.add(createCategoryButton("🌱  Check Eco Points", mintGreen));
-        gridPanel.add(createCategoryButton("⏳  Expiry of Items", mintGreen));
+        gridPanel.add(createCategoryButton("⏳  Expiry of Dishes", mintGreen));
         gridPanel.add(createCategoryButton("❤️  Favorite Recipes", mintGreen));
 
         background.add(title, BorderLayout.NORTH);
@@ -61,7 +61,7 @@ public class HomePage extends JFrame {
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setOpaque(true);
 
-        // Hover Effects
+        // Hover + Action effects
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -85,11 +85,24 @@ public class HomePage extends JFrame {
             @Override
             public void mouseReleased(MouseEvent e) {
                 button.setBackground(mintGreen);
-                if (text.contains("Check Eco Points")) {
-                    dispose();
-                    new EcoPointsPage();
-                }
 
+                // --- Navigation Logic ---
+                if (text.contains("Make Your Dish")) {
+                    dispose(); // close HomePage
+                    SwingUtilities.invokeLater(() -> new HostelRecipesGUI()); // open recipe GUI
+                }
+                else if (text.contains("Check Eco Points")) {
+                    dispose();
+                    new EcoPointsPage(); // assuming this class exists
+                }
+                else if (text.contains("Expiry of Dishes")) {
+                    dispose();
+                    new ExpiryPage(); // assuming you have an expiry page
+                }
+                else if (text.contains("Favorite Recipes")) {
+                    dispose();
+                    new FavoriteRecipesPage(); // assuming you have this page
+                }
             }
         });
 
