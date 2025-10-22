@@ -93,17 +93,24 @@ public class HomePage extends JFrame {
                 }
                 else if (text.contains("Check Eco Points")) {
                     dispose();
-                    new EcoPointsPage(); // assuming this class exists
+                    EcoPointsPage ecoPage = EcoPointsPage.getInstance();
+                    ecoPage.updatePointsDisplay(); // refresh points
+                    ecoPage.setVisible(true);
                 }
+
                 else if (text.contains("Expiry of Dishes")) {
                     dispose();
                     new ExpiryPage(); // assuming you have an expiry page
                 }
                 else if (text.contains("Favorite Recipes")) {
                     dispose();
-                    new FavoriteRecipesPage(); // assuming you have this page
+                    FavoriteRecipesPage favPage = FavoriteRecipesPage.getInstance();
+                    favPage.updateFavorites();   // refresh the list with current favorites
+                    favPage.setVisible(true);    // show the page
                 }
+
             }
+
         });
 
         return button;

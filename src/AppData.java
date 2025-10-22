@@ -1,23 +1,25 @@
-import java.util.*;
+import java.util.Set;
 
 public class AppData {
-    public static Set<String> favoriteRecipes = new HashSet<>();
-    public static int ecoPoints = 0;
 
-    // Optional helper methods
     public static void addFavorite(String recipe) {
-        favoriteRecipes.add(recipe);
-    }
-
-    public static void addEcoPoints(int points) {
-        ecoPoints += points;
-    }
-
-    public static int getEcoPoints() {
-        return ecoPoints;
+        User user = UserManager.getCurrentUser();
+        if(user != null) user.addFavorite(recipe);
     }
 
     public static Set<String> getFavorites() {
-        return favoriteRecipes;
+        User user = UserManager.getCurrentUser();
+        return user != null ? user.getFavorites() : Set.of();
+    }
+
+    public static void addEcoPoints(int points) {
+        User user = UserManager.getCurrentUser();
+        if(user != null) user.addEcoPoints(points);
+    }
+    public static int getEcoPoints() {
+        return UserManager.getCurrentUser() != null
+                ? UserManager.getCurrentUser().getEcoPoints()
+                : 0;
     }
 }
+

@@ -18,7 +18,7 @@ public class FavoriteRecipesPage extends JFrame {
         return instance;
     }
 
-    private FavoriteRecipesPage() {
+    public FavoriteRecipesPage() {
         setTitle("❤️ Favorite Recipes");
         setSize(700, 500);
         setLocationRelativeTo(null);
@@ -47,9 +47,23 @@ public class FavoriteRecipesPage extends JFrame {
         splitPane.setDividerLocation(250);
         panel.add(splitPane, BorderLayout.CENTER);
 
+        // === Bottom Panel with Navigation Buttons ===
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
+        bottomPanel.setOpaque(false);
+
+        JButton homeBtn = new JButton("🏠 Home");
+        homeBtn.addActionListener(e -> {
+            setVisible(false);   // hide current page
+            new HomePage();      // navigate back to HomePage
+        });
+
         JButton closeBtn = new JButton("❌ Close");
-        closeBtn.addActionListener(e -> setVisible(false)); // hide instead of close
-        panel.add(closeBtn, BorderLayout.SOUTH);
+        closeBtn.addActionListener(e -> setVisible(false));
+
+        bottomPanel.add(homeBtn);
+        bottomPanel.add(closeBtn);
+
+        panel.add(bottomPanel, BorderLayout.SOUTH);
 
         add(panel);
 

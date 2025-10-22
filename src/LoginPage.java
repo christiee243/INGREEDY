@@ -55,12 +55,19 @@ public class LoginPage extends JFrame {
         styleButton(signupButton, mintGreen);
 
         signupButton.addActionListener(e -> cardLayout.show(mainPanel, "signup"));
-
         loginButton.addActionListener(e -> {
-            // For now, assume login is always successful
-            dispose(); // Close login window
-            new HomePage(); // Open home page
+            String usernameText = username.getText().trim();
+            if(usernameText.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Enter username!");
+                return;
+            }
+
+            UserManager.login(usernameText); // sets current user
+
+            dispose(); // close login window
+            new HomePage(); // open HomePage
         });
+
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         panel.add(title, gbc);
         gbc.gridwidth = 1;
