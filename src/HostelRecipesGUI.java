@@ -260,15 +260,16 @@ public class HostelRecipesGUI {
 
     private void addToFavorites() {
         if (selectedRecipe != null) {
-            favoriteRecipes.add(selectedRecipe);
+            AppData.addFavorite(selectedRecipe);
             JOptionPane.showMessageDialog(null, "❤️ Added " + selectedRecipe + " to Favorites!");
         }
     }
 
     private void addEcoPoints() {
-        ecoPoints += 10;
-        JOptionPane.showMessageDialog(null, "✅ You earned +10 Eco Points! (Total: " + ecoPoints + ")");
+        AppData.addEcoPoints(10);
+        JOptionPane.showMessageDialog(null, "✅ You earned +10 Eco Points! (Total: " + AppData.getEcoPoints() + ")");
     }
+
 
     private void logExpiry() {
         String expiry = JOptionPane.showInputDialog("Enter expiry date for " + selectedRecipe + ":");
