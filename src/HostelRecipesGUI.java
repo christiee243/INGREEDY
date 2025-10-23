@@ -3,6 +3,7 @@ import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import java.util.List;
 
 public class HostelRecipesGUI {
     private RecipeDatabase db;
@@ -202,7 +203,7 @@ public class HostelRecipesGUI {
         outputArea.setText("");
         outputArea.append("🍳 Your Ingredients: " + userIngredients + "\n\n");
 
-        java.util.List<String> possible = matcher.findPossibleRecipes(userIngredients);
+        List<String> possible = matcher.findPossibleRecipes(userIngredients);
         possible.removeIf(name -> name.toLowerCase().startsWith("quick combo"));
 
         if (!possible.isEmpty()) {
@@ -272,11 +273,29 @@ public class HostelRecipesGUI {
 
 
     private void logExpiry() {
+        if (selectedRecipe == null) {
+            JOptionPane.showMessageDialog(null, "⚠ Please select a recipe first.");
+            return;
+        }
+
         String expiry = JOptionPane.showInputDialog("Enter expiry date for " + selectedRecipe + ":");
         if (expiry != null && !expiry.isEmpty()) {
+            // Save expiry data globally
+            AppData.addExpiry(selectedRecipe, expiry);
             JOptionPane.showMessageDialog(null, "🕒 Logged expiry for " + selectedRecipe + ": " + expiry);
+
+            // Optionally, open ExpiryPage to confirm update
+            int choice = JOptionPane.showConfirmDialog(null,
+                    "Do you want to view the updated expiry list?",
+                    "Open Expiry Page",
+                    JOptionPane.YES_NO_OPTION);
+            if (choice == JOptionPane.YES_OPTION) {
+                new ExpiryPage();
+            }
         }
     }
+
+
 
     // ======================== HELPER: Redirect to Home ========================
     private void goHome(JFrame frame) {
@@ -294,12 +313,12 @@ public class HostelRecipesGUI {
         button.setBorder(new LineBorder(DARK_MINT, 2, true));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
                 button.setBackground(hoverColor);
             }
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
+            public void mouseExited(MouseEvent evt) {
                 button.setBackground(baseColor);
             }
         });
